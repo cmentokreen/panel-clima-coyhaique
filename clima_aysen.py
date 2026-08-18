@@ -1,5 +1,6 @@
 import os
 import sys
+import random
 import shutil
 import requests
 import json
@@ -19,6 +20,17 @@ LAT, LON = -45.5752, -72.1024
 TIMEZONE = "America/Santiago"
 
 DIAS_SEMANA = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"]
+
+# Apodos de la casa para los niños -- se elige uno al azar en cada corrida
+# para que el mensaje no diga siempre "Roco y Milo".
+APODOS_NINOS = [
+    "Roco y Milo",
+    "Roquito y Milito",
+    "Coco y Memín",
+    "Lomitos flacos",
+    "chanchitos perros",
+    "potos flacos",
+]
 
 # Los 3 horarios reales del día (hora local de Coyhaique). GitHub Actions
 # corre este script cada hora (para no pelear con el cambio de horario de
@@ -292,6 +304,7 @@ def analizar_clima_con_ia(html_dgac, condicion, viento_modelo, momento_dia):
     print("🧠 4. Gemini 2.5 Flash está redactando el mensaje y revisando el viento local...")
 
     hora_actual = hora_local_coyhaique().strftime("%H:%M")
+    apodo = random.choice(APODOS_NINOS)
 
     if momento_dia == "mañana":
         instruccion_mensaje = (
@@ -320,7 +333,7 @@ def analizar_clima_con_ia(html_dgac, condicion, viento_modelo, momento_dia):
 
     Devuelve estrictamente un JSON con esta estructura exacta:
     {{
-        "mensaje": "Mensaje cálido para Roco y Milo, usando la temperatura y condición reales de arriba. LÍMITE ESTRICTO: máximo 100 caracteres en total (no líneas, CARACTERES -- cuenta espacios y signos). Es preferible una frase corta y directa a una completa que se pase del límite. {instruccion_mensaje}",
+        "mensaje": "Mensaje cálido dirigiéndote a los niños como '{apodo}' (usa exactamente ese apodo, no lo cambies ni lo traduzcas a otro), usando la temperatura y condición reales de arriba. LÍMITE ESTRICTO: máximo 100 caracteres en total (no líneas, CARACTERES -- cuenta espacios y signos). Es preferible una frase corta y directa a una completa que se pase del límite. {instruccion_mensaje}",
         "viento_actual": {{
             "velocidad": "XX km/h",
             "direccion_texto": "N, NE, E, SE, S, SW, W o NW",
@@ -349,7 +362,7 @@ def analizar_clima_con_ia(html_dgac, condicion, viento_modelo, momento_dia):
     except Exception as e:
         print(f"❌ Error con Gemini: {e}")
         return {
-            "mensaje": f"Hoy hace {condicion['temp']}°C en Coyhaique. ¡Abríguense bien, Roco y Milo!",
+            "mensaje": f"Hoy hace {condicion['temp']}°C en Coyhaique. ¡Abríguense bien, {apodo}!",
             "viento_actual": viento_modelo,
         }
 

@@ -257,11 +257,13 @@
                     <canvas id="mainChart"></canvas>
                 </div>
                 
-                <div class="sys-footer">
-                    <span><span class="material-symbols-outlined">update</span> 06:45 AM</span>
-                    <span><span class="material-symbols-outlined">wifi</span> Excelente (-48dBm)</span>
-                    <span><span class="material-symbols-outlined">battery_full</span> 100% (4.12v)</span>
-                </div>
+                <!-- Esta franja queda en blanco a propósito: la hora real,
+                     la señal WiFi y el estado de energía solo los sabe el
+                     ESP32 en el momento exacto en que baja y dibuja el
+                     panel (la nube que renderiza esto corre horas antes,
+                     sin ese dato). El firmware dibuja ese texto encima,
+                     directamente sobre esta franja reservada. -->
+                <div class="sys-footer"></div>
             </div>
         </div>
     </div>
