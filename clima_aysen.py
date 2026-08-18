@@ -320,7 +320,7 @@ def analizar_clima_con_ia(html_dgac, condicion, viento_modelo, momento_dia):
 
     Devuelve estrictamente un JSON con esta estructura exacta:
     {{
-        "mensaje": "Mensaje cálido y breve (máx 3 líneas) para Roco y Milo, usando la temperatura y condición reales de arriba. {instruccion_mensaje}",
+        "mensaje": "Mensaje cálido para Roco y Milo, usando la temperatura y condición reales de arriba. LÍMITE ESTRICTO: máximo 100 caracteres en total (no líneas, CARACTERES -- cuenta espacios y signos). Es preferible una frase corta y directa a una completa que se pase del límite. {instruccion_mensaje}",
         "viento_actual": {{
             "velocidad": "XX km/h",
             "direccion_texto": "N, NE, E, SE, S, SW, W o NW",
@@ -493,9 +493,19 @@ if __name__ == "__main__":
     viento_modelo = construir_viento_modelo(om)
     ia = analizar_clima_con_ia(html_crudo, condicion, viento_modelo, momento)
 
+    # Red de seguridad final: si Gemini igual se pasa del límite pedido en
+    # el prompt, recortamos acá con puntos suspensivos. Así el layout nunca
+    # depende 100% de que la IA "obedezca" -- la caja en el HTML también
+    # recorta por su cuenta (overflow:hidden), pero un corte con "…" en una
+    # palabra completa se ve mejor que uno crudo a media palabra.
+    LARGO_MAXIMO_MENSAJE = 140
+    mensaje_ia = ia.get("mensaje", "")
+    if len(mensaje_ia) > LARGO_MAXIMO_MENSAJE:
+        mensaje_ia = mensaje_ia[:LARGO_MAXIMO_MENSAJE].rsplit(" ", 1)[0] + "…"
+
     resultado_final = {
         "generado": hora_local_coyhaique().isoformat(timespec="minutes"),
-        "mensaje": ia.get("mensaje", ""),
+        "mensaje": mensaje_ia,
         "escenario_imagen": elegir_escenario(condicion["codigo"], condicion["temp"]),
         "viento_actual": ia.get("viento_actual", viento_modelo),
         "condicion_actual": condicion,

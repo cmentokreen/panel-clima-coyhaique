@@ -60,7 +60,7 @@
         }
         .top-left img {
             max-width: 100%;
-            height: 115px; /* Foto notablemente más grande */
+            height: 145px; /* Más grande: ganamos el espacio del label que sacamos */
             object-fit: contain;
         }
         .ai-block-top {
@@ -68,19 +68,19 @@
             width: 100%;
             text-align: justify;
         }
-        .ai-block-top .ai-label {
-            font-size: 12px;
-            font-weight: 700;
-            color: #000;
-            margin-bottom: 3px;
-            text-align: center;
-            letter-spacing: 0.5px;
-        }
         #mensaje-ia {
             font-size: 13px; /* Mínimo legible en 1-bit a esta resolución */
             font-weight: 500;
             line-height: 1.35;
             color: #000;
+            /* Contención dura: si el mensaje de la IA sale más largo de lo
+               pedido, se recorta acá por líneas completas (nunca a media
+               línea) en vez de desbordar hacia la fila de abajo
+               (Amanecer/Atardecer). */
+            display: -webkit-box;
+            -webkit-box-orient: vertical;
+            -webkit-line-clamp: 3;
+            overflow: hidden;
         }
 
         .top-mid {
@@ -159,7 +159,6 @@
             flex-direction: column;
             justify-content: center;
             padding-right: 15px;
-            border-right: 2px solid #000;
         }
 
         .data-grid {
@@ -215,7 +214,6 @@
             <div class="top-left">
                 <img id="imagen-clima" src="" alt="Foto">
                 <div class="ai-block-top">
-                    <div class="ai-label">CONSEJO DE HOY</div>
                     <div id="mensaje-ia">A la espera de datos...</div>
                 </div>
             </div>
