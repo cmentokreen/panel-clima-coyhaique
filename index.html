@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Panel E-Ink - Coyhaique Final Apilado</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,300,0,0" />
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        body {
+            background-color: #2a2a2a;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        
+        #pantalla-eink {
+            width: 800px;
+            height: 480px;
+            background-color: #ffffff;
+            color: #000000;
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.6);
+            overflow: hidden;
+            box-sizing: border-box;
+            padding: 20px;
+        }
+
+        /* IMPORTANTE para e-ink 1-bit: iconos rellenos (FILL 1) y peso medio.
+           Los iconos "outline" delgados (wght 300) pierden sus trazos finos
+           al convertir a blanco/negro puro y terminan viéndose rotos. */
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 1, 'wght' 500, 'GRAD' 0, 'opsz' 24;
+            color: #000;
+            display: inline-block;
+            line-height: 1;
+        }
+
+        /* --- FILA SUPERIOR --- */
+        .top-row {
+            display: flex;
+            height: 45%;
+            padding-bottom: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .top-left {
+            width: 35%; /* Mucho más espacio ganado */
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            align-items: center;
+            padding-right: 15px;
+        }
+        .top-left img {
+            max-width: 100%;
+            height: 115px; /* Foto notablemente más grande */
+            object-fit: contain;
+        }
+        .ai-block-top {
+            margin-top: 10px;
+            width: 100%;
+            text-align: justify;
+        }
+        .ai-block-top .ai-label {
+            font-size: 12px;
+            font-weight: 700;
+            color: #000;
+            margin-bottom: 3px;
+            text-align: center;
+            letter-spacing: 0.5px;
+        }
+        #mensaje-ia {
+            font-size: 13px; /* Mínimo legible en 1-bit a esta resolución */
+            font-weight: 500;
+            line-height: 1.35;
+            color: #000;
+        }
+
+        .top-mid {
+            width: 18%; /* Reducido a lo ancho porque ahora es vertical */
+            display: flex;
+            flex-direction: column; /* TRUCO: APILAMIENTO VERTICAL */
+            justify-content: center;
+            align-items: center;
+            gap: 2px; /* Muy juntos */
+        }
+        .main-weather-icon { 
+            font-size: 55px; 
+            margin-bottom: -5px; /* Acerca la nube a los números */
+        }
+        .temp-box {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center; /* Centrado absoluto */
+        }
+        .temp-huge {
+            display: flex;
+            align-items: flex-start;
+            font-size: 58px; 
+            font-weight: 600;
+            line-height: 0.8;
+            letter-spacing: -2px;
+        }
+        .temp-huge span {
+            font-size: 20px; 
+            font-weight: 500;
+            margin-left: 2px;
+            margin-top: 2px;
+            letter-spacing: 0;
+        }
+        .feels-like {
+            font-size: 13px;
+            color: #000;
+            margin-top: 5px;
+            font-weight: 500;
+            text-align: center;
+        }
+
+        .top-right {
+            width: 47%; /* Espacio equilibrado para los días */
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            padding-left: 15px;
+        }
+        .header-text {
+            text-align: right;
+            margin-bottom: 15px; 
+        }
+        
+        .forecast-5day {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+        }
+        .day-block {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .day-block .day-name { font-size: 16px; margin-bottom: 5px; font-weight: 700;}
+        .day-block .material-symbols-outlined { font-size: 28px; margin-bottom: 5px; }
+        .day-block .day-temps { font-size: 15px; font-weight: 600; color: #000; }
+
+        /* --- FILA INFERIOR --- */
+        .bottom-row { display: flex; height: 55%; }
+
+        .bot-left {
+            width: 35%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding-right: 15px;
+            border-right: 2px solid #000;
+        }
+
+        .data-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            row-gap: 20px;
+            column-gap: 5px;
+        }
+        .grid-item { display: flex; align-items: center; }
+        .grid-icon {
+            font-size: 26px;
+            width: 32px;
+            margin-right: 6px;
+            text-align: center;
+        }
+        .grid-text { display: flex; flex-direction: column; }
+        .grid-text .label { font-size: 11px; color: #000; margin-bottom: 1px; font-weight: 600;}
+        .grid-text .value { font-size: 16px; font-weight: 700; }
+        .grid-text .value span { font-size: 11px; font-weight: 500; color: #000; }
+
+        .bot-right {
+            width: 65%;
+            display: flex;
+            flex-direction: column;
+            padding-left: 20px;
+            position: relative;
+        }
+        .chart-container {
+            flex-grow: 1;
+            width: 100%;
+            position: relative;
+        }
+        
+        .sys-footer {
+            height: 15px;
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            font-size: 11px;
+            color: #000;
+            gap: 15px;
+            margin-top: 5px;
+            font-weight: 600;
+        }
+        .sys-footer span { display: flex; align-items: center; gap: 4px; }
+        .sys-footer .material-symbols-outlined { font-size: 14px; }
+    </style>
+</head>
+<body>
+
+    <div id="pantalla-eink">
+        <div class="top-row">
+            <div class="top-left">
+                <img id="imagen-clima" src="" alt="Foto">
+                <div class="ai-block-top">
+                    <div class="ai-label">CONSEJO DE HOY</div>
+                    <div id="mensaje-ia">A la espera de datos...</div>
+                </div>
+            </div>
+            
+            <div class="top-mid">
+                <span class="material-symbols-outlined main-weather-icon" id="icono-actual">cloud</span>
+                <div class="temp-box">
+                    <div class="temp-huge" id="temp-actual">--<span>°C</span></div>
+                    <div class="feels-like">Sensación <span id="temp-sensacion">--</span>°C</div>
+                </div>
+            </div>
+            
+            <div class="top-right">
+                <div class="header-text">
+                    <h1 style="font-size: 20px; margin:0;">Coyhaique, Patagonia Aysén</h1>
+                    <h2 id="fecha-actual" style="font-size: 15px; font-weight: 600; color: #000; margin:0;">Cargando...</h2>
+                </div>
+                
+                <div class="forecast-5day" id="forecast-5day">
+                    <!-- Los 5 bloques de día se generan en JS desde clima_exportado.json -->
+                </div>
+            </div>
+        </div>
+
+        <div class="bottom-row">
+            <div class="bot-left">
+                <div class="data-grid">
+                    <div class="grid-item"><span class="material-symbols-outlined grid-icon">wb_twilight</span><div class="grid-text"><div class="label">Amanecer</div><div class="value" id="valor-amanecer">--:--</div></div></div>
+                    <div class="grid-item"><span class="material-symbols-outlined grid-icon">bedtime</span><div class="grid-text"><div class="label">Atardecer</div><div class="value" id="valor-atardecer">--:--</div></div></div>
+                    <div class="grid-item"><span class="material-symbols-outlined grid-icon">air</span><div class="grid-text"><div class="label">Viento</div><div class="value" id="texto-viento">-- <span>km/h</span></div></div></div>
+                    <div class="grid-item"><span class="material-symbols-outlined grid-icon">water_drop</span><div class="grid-text"><div class="label">Humedad</div><div class="value" id="valor-humedad">--%</div></div></div>
+                    <div class="grid-item"><span class="material-symbols-outlined grid-icon">light_mode</span><div class="grid-text"><div class="label">Índice UV</div><div class="value" id="valor-uv">-- <span id="valor-uv-cat"></span></div></div></div>
+                    <div class="grid-item"><span class="material-symbols-outlined grid-icon">speed</span><div class="grid-text"><div class="label">Presión</div><div class="value" id="valor-presion">-- <span>hPa</span></div></div></div>
+                    <div class="grid-item"><span class="material-symbols-outlined grid-icon">eco</span><div class="grid-text"><div class="label">Calidad Aire</div><div class="value" id="valor-aire">-- <span id="valor-aire-cat"></span></div></div></div>
+                    <div class="grid-item"><span class="material-symbols-outlined grid-icon">visibility</span><div class="grid-text"><div class="label">Visibilidad</div><div class="value" id="valor-visibilidad">-- <span>km</span></div></div></div>
+                </div>
+            </div>
+
+            <div class="bot-right">
+                <div class="chart-container">
+                    <canvas id="mainChart"></canvas>
+                </div>
+                
+                <div class="sys-footer">
+                    <span><span class="material-symbols-outlined">update</span> 06:45 AM</span>
+                    <span><span class="material-symbols-outlined">wifi</span> Excelente (-48dBm)</span>
+                    <span><span class="material-symbols-outlined">battery_full</span> 100% (4.12v)</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const opciones = { weekday: 'long', month: 'long', day: 'numeric' };
+        document.getElementById('fecha-actual').innerText = new Date().toLocaleDateString('es-ES', opciones).replace(/^\w/, c => c.toUpperCase());
+
+        const mapaIconos = { "sol": "sunny", "nubes": "cloud", "lluvia": "rainy", "nieve": "ac_unit" };
+
+        // En un panel 1-bit no existen los grises: la probabilidad de lluvia
+        // se muestra como línea negra punteada (no como barra gris, que
+        // desaparece o se satura al convertir a blanco/negro puro).
+        Chart.defaults.color = '#000';
+        Chart.defaults.font.family = 'Inter';
+
+        // Patrón de puntos negros ("enjambre") para simular gris en una
+        // pantalla 1-bit real: cada punto es 100% negro o 100% blanco, así
+        // que sobrevive intacto al umbral de conversión (a diferencia de un
+        // relleno gris sólido, que desaparece o se ve inconsistente). La
+        // densidad de puntos por área es lo que el ojo lee como "gris".
+        function crearPatronPuntos() {
+            const tile = document.createElement('canvas');
+            tile.width = 12;
+            tile.height = 12;
+            const tctx = tile.getContext('2d');
+            tctx.fillStyle = '#000';
+            // Posiciones semi-aleatorias fijas (no una grilla perfecta) para
+            // que se vea como un enjambre de puntos, no como una trama regular.
+            [[2, 3], [9, 2], [5, 6], [1, 9], [8, 10]].forEach(([x, y]) => {
+                tctx.beginPath();
+                tctx.arc(x, y, 1.3, 0, Math.PI * 2);
+                tctx.fill();
+            });
+            return ctx.createPattern(tile, 'repeat');
+        }
+
+        // Dibuja un marco delgado alrededor del área del gráfico. En una
+        // pantalla 1-bit un gris real desaparece o se ve inconsistente
+        // (ver nota más arriba sobre el umbral), así que usamos negro
+        // pero con un trazo fino: da la sensación de "suave" sin arriesgar
+        // que la línea se pierda al convertir a blanco/negro puro.
+        const marcoEjes = {
+            id: 'marcoEjes',
+            afterDraw(chart) {
+                const { ctx, chartArea: { left, top, right, bottom } } = chart;
+                ctx.save();
+                ctx.strokeStyle = '#000';
+                ctx.lineWidth = 1;
+                // Sin línea superior: quedaba muy pegada a la línea divisoria
+                // de la fila de arriba y se veía como doble trazo. Solo
+                // izquierda + abajo + derecha, como un "piso con paredes".
+                ctx.beginPath();
+                ctx.moveTo(left + 0.5, top + 0.5);
+                ctx.lineTo(left + 0.5, bottom - 0.5);
+                ctx.lineTo(right - 0.5, bottom - 0.5);
+                ctx.lineTo(right - 0.5, top + 0.5);
+                ctx.stroke();
+                ctx.restore();
+            }
+        };
+
+        const ctx = document.getElementById('mainChart').getContext('2d');
+        const chart = new Chart(ctx, {
+            plugins: [marcoEjes],
+            data: {
+                labels: ['10', '13', '16', '19', '22', '01', '04', '07', '10'],
+                datasets: [
+                    {
+                        type: 'bar',
+                        label: 'Precipitación (mm)',
+                        data: [],
+                        backgroundColor: crearPatronPuntos(),
+                        borderWidth: 0,
+                        barPercentage: 0.9,
+                        categoryPercentage: 0.8,
+                        yAxisID: 'y2',
+                        order: 0
+                    },
+                    {
+                        type: 'line',
+                        label: 'Temperatura',
+                        data: [],
+                        borderColor: '#000',
+                        borderWidth: 4,
+                        tension: 0.35,
+                        pointRadius: 0,
+                        yAxisID: 'y',
+                        order: 1
+                    },
+                    {
+                        type: 'line',
+                        label: 'Probabilidad de lluvia',
+                        data: [],
+                        borderColor: '#000',
+                        borderWidth: 2,
+                        borderDash: [6, 4],
+                        pointRadius: 0,
+                        tension: 0.2,
+                        yAxisID: 'y1',
+                        order: 2
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                animation: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { grid: { display: false, drawBorder: false }, ticks: { font: { size: 11, weight: '600' } } },
+                    y: {
+                        position: 'left', grid: { display: false }, ticks: { font: { size: 11, weight: '600' }, stepSize: 5 },
+                        title: { display: true, text: 'Temp. °C', font: { size: 11, weight: '700' }, color: '#000' }
+                    },
+                    y1: {
+                        position: 'right', grid: { display: false }, min: 0, max: 100, ticks: { font: { size: 11, weight: '600' }, stepSize: 20, callback: v => v + '%' },
+                        title: { display: true, text: 'Prob. lluvia', font: { size: 11, weight: '700' }, color: '#000' }
+                    },
+                    // Eje interno para las barras de precipitación: oculto (sin
+                    // ticks ni línea propia). El "suggestedMax" generoso mantiene
+                    // las barras bajas, como un fondo discreto detrás de las
+                    // líneas, en vez de dominar el gráfico.
+                    y2: {
+                        display: false,
+                        min: 0,
+                        suggestedMax: 12
+                    }
+                }
+            }
+        });
+
+        function pintarPronostico5Dias(dias) {
+            const cont = document.getElementById('forecast-5day');
+            cont.innerHTML = '';
+            (dias || []).forEach(d => {
+                const bloque = document.createElement('div');
+                bloque.className = 'day-block';
+                bloque.innerHTML = `
+                    <div class="day-name">${d.dia}</div>
+                    <span class="material-symbols-outlined">${mapaIconos[d.icono] || 'cloud'}</span>
+                    <div class="day-temps">${d.max}°|${d.min}°</div>`;
+                cont.appendChild(bloque);
+            });
+        }
+
+        async function actualizarPantalla() {
+            try {
+                const respuesta = await fetch('clima_exportado.json?v=' + new Date().getTime());
+                const datos = await respuesta.json();
+                const cond = datos.condicion_actual || {};
+
+                document.getElementById('imagen-clima').src = datos.escenario_imagen + '.png';
+                document.getElementById('mensaje-ia').innerText = datos.mensaje;
+
+                document.getElementById('temp-actual').innerHTML = `${cond.temp ?? '--'}<span>°C</span>`;
+                document.getElementById('temp-sensacion').innerText = cond.sensacion ?? '--';
+                document.getElementById('icono-actual').innerText = mapaIconos[cond.icono] || 'cloud';
+
+                document.getElementById('texto-viento').innerHTML = `${(datos.viento_actual?.velocidad || '--').replace('km/h', '')} <span>km/h</span>`;
+
+                document.getElementById('valor-amanecer').innerText = datos.sol?.amanecer ?? '--:--';
+                document.getElementById('valor-atardecer').innerText = datos.sol?.atardecer ?? '--:--';
+                document.getElementById('valor-humedad').innerText = `${cond.humedad ?? '--'}%`;
+                document.getElementById('valor-uv').innerHTML = `${cond.uv ?? '--'} <span id="valor-uv-cat">${cond.uv_categoria || ''}</span>`;
+                document.getElementById('valor-presion').innerHTML = `${cond.presion ?? '--'} <span>hPa</span>`;
+                document.getElementById('valor-visibilidad').innerHTML = `${cond.visibilidad_km ?? '--'} <span>km</span>`;
+
+                if (datos.calidad_aire) {
+                    document.getElementById('valor-aire').innerHTML = `${datos.calidad_aire.valor} <span id="valor-aire-cat">${datos.calidad_aire.categoria}</span>`;
+                } else {
+                    document.getElementById('valor-aire').innerHTML = `-- <span>Sin datos</span>`;
+                }
+
+                pintarPronostico5Dias(datos.pronostico_5dias);
+
+                const grafico = datos.pronostico_grafico || {};
+                chart.data.labels = grafico.labels || chart.data.labels;
+                chart.data.datasets[0].data = grafico.precipitacion_mm || [];
+                chart.data.datasets[1].data = grafico.temperaturas || [];
+                chart.data.datasets[2].data = grafico.probabilidad_lluvia || [];
+                chart.update();
+
+            } catch (error) {
+                console.error("Error cargando JSON:", error);
+            }
+        }
+        actualizarPantalla();
+    </script>
+</body>
+</html>

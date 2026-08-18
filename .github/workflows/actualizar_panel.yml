@@ -1,0 +1,62 @@
+name: Actualizar panel de clima
+
+# Corre cada hora en punto (en UTC), pero el propio script decide si
+# realmente toca generar algo: solo actúa cuando la hora LOCAL de Coyhaique
+# (calculada con zoneinfo, que ya sabe del horario de verano/invierno
+# chileno) cae dentro de +/-30 min de las 7am, 1pm u 8pm. El resto de las
+# corridas terminan en segundos sin gastar cuota de Gemini ni republicar nada.
+on:
+  schedule:
+    - cron: "0 * * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  actualizar:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Instalar dependencias Python
+        run: pip install -r requirements.txt
+
+      - name: Instalar Chromium para Playwright
+        run: playwright install --with-deps chromium
+
+      - name: Levantar servidor local para el render
+        run: python -m http.server 8000 &
+
+      - name: Generar panel (si toca a esta hora)
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: python clima_aysen.py
+
+      - name: Configurar GitHub Pages
+        if: hashFiles('docs/panel.bin') != ''
+        uses: actions/configure-pages@v5
+
+      - name: Subir docs/ como artifact de Pages
+        if: hashFiles('docs/panel.bin') != ''
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs
+
+      - name: Publicar en GitHub Pages
+        if: hashFiles('docs/panel.bin') != ''
+        id: deployment
+        uses: actions/deploy-pages@v4

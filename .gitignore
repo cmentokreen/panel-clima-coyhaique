@@ -1,0 +1,24 @@
+# Entorno virtual y caches de Python
+entorno_clima/
+__pycache__/
+*.pyc
+
+# Secretos y config local -- NUNCA subir esto
+.env
+.env.save
+include/wifi_credentials.h
+
+# Artefactos generados en cada corrida. docs/ tampoco se versiona: el
+# workflow lo arma fresco y lo publica directo a GitHub Pages como artifact,
+# nunca se commitea (si no, el historial del repo crecería con binarios
+# nuevos cada 8 horas).
+screenshot_temp.png
+imagen_hex.h
+panel_eink.bmp
+clima_exportado.json
+clima_exportado.json.bak
+docs/
+
+# Fotos personales que no son parte del proyecto
+*.HEIC
+"WhatsApp Image"*
