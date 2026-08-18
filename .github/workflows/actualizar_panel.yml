@@ -8,7 +8,12 @@ name: Actualizar panel de clima
 on:
   schedule:
     - cron: "0 * * * *"
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      forzar:
+        description: "Forzar la corrida aunque no sea 7am/1pm/8pm (para probar)"
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -44,6 +49,7 @@ jobs:
       - name: Generar panel (si toca a esta hora)
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          FORZAR_EJECUCION: ${{ github.event.inputs.forzar == 'true' && '1' || '' }}
         run: python clima_aysen.py
 
       - name: Configurar GitHub Pages
