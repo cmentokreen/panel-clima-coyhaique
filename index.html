@@ -69,7 +69,7 @@
             text-align: justify;
         }
         #mensaje-ia {
-            font-size: 13px; /* Mínimo legible en 1-bit a esta resolución */
+            font-size: 14px; /* +1pt a pedido, se veía muy chico */
             font-weight: 500;
             line-height: 1.35;
             color: #000;
@@ -308,7 +308,12 @@
         // que la línea se pierda al convertir a blanco/negro puro.
         const marcoEjes = {
             id: 'marcoEjes',
-            afterDraw(chart) {
+            // beforeDraw (no afterDraw): si el marco se dibuja DESPUÉS de las
+            // líneas, tapa cualquier línea que quede pegada al borde -- por
+            // ejemplo la de probabilidad de lluvia cuando vale 0% varios
+            // puntos seguidos (pinneada justo en el borde inferior). Dibujando
+            // el marco primero, las líneas quedan siempre por encima y se ven.
+            beforeDraw(chart) {
                 const { ctx, chartArea: { left, top, right, bottom } } = chart;
                 ctx.save();
                 ctx.strokeStyle = '#000';
@@ -380,7 +385,17 @@
                         title: { display: true, text: 'Temp. °C', font: { size: 11, weight: '700' }, color: '#000' }
                     },
                     y1: {
-                        position: 'right', grid: { display: false }, min: 0, max: 100, ticks: { font: { size: 11, weight: '600' }, stepSize: 20, callback: v => v + '%' },
+                        position: 'right', grid: { display: false },
+                        // min/max con un colchón (-8/108) en vez de 0/100 exactos:
+                        // si la línea vale 0% (frecuente en días secos) o 100%
+                        // seguido, queda pegada pixel a pixel al borde del marco
+                        // y se vuelve invisible (los huecos de la línea punteada
+                        // solo revelan el borde sólido de abajo, igual de negro).
+                        // afterBuildTicks fuerza que los ticks sigan mostrando
+                        // 0/20/40/60/80/100% pese al colchón.
+                        min: -8, max: 108,
+                        afterBuildTicks: axis => { axis.ticks = [0, 20, 40, 60, 80, 100].map(v => ({ value: v })); },
+                        ticks: { font: { size: 11, weight: '600' }, callback: v => v + '%' },
                         title: { display: true, text: 'Prob. lluvia', font: { size: 11, weight: '700' }, color: '#000' }
                     },
                     // Eje interno para las barras de precipitación: oculto (sin

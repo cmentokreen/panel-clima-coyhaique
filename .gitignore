@@ -22,3 +22,7 @@ docs/
 # Fotos personales que no son parte del proyecto
 *.HEIC
 "WhatsApp Image"*
+
+# Diseño del marco 3D: queda solo local por ahora (no es parte del
+# software del panel) -- avisa si en algún momento quieres versionarlo.
+marco_3d/
