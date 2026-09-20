@@ -1,13 +1,21 @@
 name: Actualizar panel de clima
 
-# Corre cada hora en punto (en UTC), pero el propio script decide si
-# realmente toca generar algo: solo actúa cuando la hora LOCAL de Coyhaique
-# (calculada con zoneinfo, que ya sabe del horario de verano/invierno
-# chileno) cae dentro de +/-30 min de las 7am, 1pm u 8pm. El resto de las
-# corridas terminan en segundos sin gastar cuota de Gemini ni republicar nada.
+# Corre 3 veces al día, ya en hora LOCAL de Coyhaique: el campo `timezone`
+# le indica a GitHub que ajuste el horario de verano/invierno chileno por
+# su cuenta, así que el cron de abajo se lee directo como 7:07, 13:07 y
+# 20:07 hora Coyhaique, todo el año, sin cálculo manual de UTC.
+#
+# Antes esto corría cada hora en punto ("0 * * * *") y el propio script
+# filtraba con +/-30 min de margen. El problema: ":00" es el minuto más
+# congestionado de todo GitHub Actions, y bajo carga alta la plataforma
+# puede descartar corridas programadas ahí sin avisar -- eso era lo que
+# estaba dejando el panel sin actualizarse. Disparar solo 3 veces (no 24)
+# y en el minuto :07 reduce muchísimo esa chance. El script igual valida
+# con +/-30 min como red de seguridad, así que esto no cambia su lógica.
 on:
   schedule:
-    - cron: "0 * * * *"
+    - cron: "7 7,13,20 * * *"
+      timezone: "America/Santiago"
   workflow_dispatch:
     inputs:
       forzar:
